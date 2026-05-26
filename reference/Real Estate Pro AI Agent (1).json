@@ -1,0 +1,1058 @@
+{
+  "name": "Real Estate Pro AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -5840,
+        1824
+      ],
+      "id": "e8e04b19-7221-4e4b-a751-e726c34b308a",
+      "name": "WhatsApp Trigger",
+      "webhookId": "43ad8f31-820c-451a-ab95-b15d4645b9de",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "XYAvfRufKmkpRkcD",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d7a42175-00c9-4b4b-b118-6f3a984487db",
+              "leftValue": "={{ $json.messages[0].text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -5616,
+        1824
+      ],
+      "id": "87ce54d2-51ba-4312-9718-b0d0f36a924d",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -5392,
+        2048
+      ],
+      "id": "f81b12f9-710a-45db-91d9-f4a4301661b5",
+      "name": "GPT4.1 Mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "DnpqK3oIy5izhgk9",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Filter').item.json.contacts[0].wa_id }}_agent",
+        "contextWindowLength": 30
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -5264,
+        2048
+      ],
+      "id": "f6833e1c-a6fe-45dd-8434-5acd3fd683f9",
+      "name": "Agent Memory"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "mukulmunda41@gmail.com",
+          "mode": "list",
+          "cachedResultName": "mukulmunda41@gmail.com"
+        },
+        "start": "={{ $fromAI('Start', 'ISO 8601 start datetime IST e.g. 2025-01-15T10:00:00+05:30', 'string') }}",
+        "end": "={{ $fromAI('End', 'ISO 8601 end datetime IST 1 hour after start e.g. 2025-01-15T11:00:00+05:30', 'string') }}",
+        "additionalFields": {
+          "description": "={{ $fromAI('Description', 'Name, Phone, Property, Budget, Booked via WhatsApp', 'string') }}",
+          "summary": "={{ $fromAI('Summary', '[CustomerName] - Site Visit - [ProjectName]', 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -5136,
+        2048
+      ],
+      "id": "f9e34734-3ce8-4dca-a234-cea2d07a8ff3",
+      "name": "Create Site Visit",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "9gndXuG38AaTN7cT",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "mukulmunda41@gmail.com",
+          "mode": "list",
+          "cachedResultName": "mukulmunda41@gmail.com"
+        },
+        "limit": 15,
+        "options": {
+          "orderBy": "startTime",
+          "timeZone": "Asia/Kolkata"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -5008,
+        2048
+      ],
+      "id": "9c2ef444-184a-4f9d-992b-023d27f3c614",
+      "name": "Check Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "9gndXuG38AaTN7cT",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search real estate property knowledge base. Use for ANY question about properties, pricing, location, BHK config, amenities, possession, availability. Returns price, carpet area, possession, amenities, image URLs. ALWAYS use — never answer from memory.",
+        "tableName": {
+          "__rl": true,
+          "value": "property_listings",
+          "mode": "list",
+          "cachedResultName": "property_listings"
+        },
+        "options": {
+          "queryName": "match_property_listings"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -4880,
+        2048
+      ],
+      "id": "318e90ac-d029-4b8f-8746-1de1954599fa",
+      "name": "Property Knowledge Base",
+      "credentials": {
+        "supabaseApi": {
+          "id": "G4aT17GNppwzFsJS",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -4800,
+        2256
+      ],
+      "id": "b498f3b5-092a-4818-b68d-e4c3517d0e07",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "DnpqK3oIy5izhgk9",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================\n// PARSE & FORMAT — With Display Name Fix\n// ============================================\n\nlet agentOutput;\n\ntry {\n  const rawOutput = $json.output;\n\n  if (typeof rawOutput === 'object' && rawOutput !== null) {\n    agentOutput = rawOutput;\n  } else if (typeof rawOutput === 'string') {\n    let cleaned = rawOutput.trim();\n    cleaned = cleaned.replace(/^```json\\s*/i, '').replace(/\\s*```$/i, '');\n    cleaned = cleaned.replace(/^```\\s*/i, '').replace(/\\s*```$/i, '');\n    const jsonMatch = cleaned.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) cleaned = jsonMatch[0];\n    agentOutput = JSON.parse(cleaned);\n  } else {\n    throw new Error('Bad output: ' + typeof rawOutput);\n  }\n} catch (e) {\n  return [{\n    json: {\n      message: \"I'm here to help! Which property or area are you interested in?\",\n      has_image: false,\n      image_urls: [],\n      properties_mentioned: [],\n      properties_mentioned_string: '',\n      customer_name: '',\n      customer_phone: '',\n      display_name: '',\n      wa_display_name: '',\n      budget: '',\n      preferred_location: '',\n      bhk_config: '',\n      appointment_requested: false,\n      appointment_info: '',\n      calendar_event_link: '',\n      visit_date: '',\n      visit_time: '',\n      conversation_type: 'general_query',\n      conversation_complete: false,\n      last_interaction_timestamp: new Date().toISOString(),\n      _parse_error: true,\n      _error_detail: e.message\n    }\n  }];\n}\n\n// --- Display Name Logic ---\nconst waDisplayName = $('Filter').item.json.contacts[0]?.profile?.name || '';\nconst waId = $('Filter').item.json.contacts[0]?.wa_id || '';\nconst phoneFormatted = waId.startsWith('91')\n  ? '+91 ' + waId.slice(2)\n  : '+' + waId;\n\n// Priority: Agent collected name > WA Display Name > Phone\nagentOutput.display_name =\n  (agentOutput.customer_name && agentOutput.customer_name.trim() !== '')\n    ? agentOutput.customer_name.trim()\n    : (waDisplayName && waDisplayName.trim() !== '')\n      ? waDisplayName.trim()\n      : phoneFormatted;\n\nagentOutput.wa_display_name = waDisplayName || phoneFormatted;\n\n// --- Normalize Fields ---\n\n// properties_mentioned\nif (typeof agentOutput.properties_mentioned === 'string') {\n  agentOutput.properties_mentioned = agentOutput.properties_mentioned\n    ? [agentOutput.properties_mentioned] : [];\n}\nif (!Array.isArray(agentOutput.properties_mentioned)) {\n  agentOutput.properties_mentioned = [];\n}\nagentOutput.properties_mentioned_string = agentOutput.properties_mentioned.join(', ');\n\n// booleans\nagentOutput.has_image = agentOutput.has_image === true || agentOutput.has_image === 'true';\nagentOutput.appointment_requested = agentOutput.appointment_requested === true || agentOutput.appointment_requested === 'true';\nagentOutput.conversation_complete = agentOutput.conversation_complete === true || agentOutput.conversation_complete === 'true';\n\n// image_urls\nif (!Array.isArray(agentOutput.image_urls)) {\n  agentOutput.image_urls = agentOutput.image_urls\n    ? [String(agentOutput.image_urls)] : [];\n}\nagentOutput.image_urls = agentOutput.image_urls.filter(u => u && u.trim() !== '');\nif (agentOutput.image_urls.length === 0) agentOutput.has_image = false;\n\n// conversation_type\nconst validTypes = [\n  'property_inquiry', 'pricing_query',\n  'site_visit_booking', 'general_query', 'investment_inquiry'\n];\nif (!validTypes.includes(agentOutput.conversation_type)) {\n  agentOutput.conversation_type = 'general_query';\n}\n\n// string fields\nconst strFields = [\n  'message', 'customer_name', 'customer_phone',\n  'budget', 'preferred_location', 'bhk_config',\n  'appointment_info', 'calendar_event_link',\n  'visit_date', 'visit_time'\n];\nfor (const f of strFields) {\n  agentOutput[f] = agentOutput[f] != null\n    ? String(agentOutput[f]).trim() : '';\n}\n\nif (!agentOutput.message) agentOutput.message = 'How can I help you today?';\n\n// IST timestamp\nconst now = new Date();\nconst ist = new Date(now.getTime() + (5.5 * 60 * 60000));\nagentOutput.last_interaction_timestamp = ist.toISOString().replace('Z', '+05:30');\n\nreturn [{ json: agentOutput }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4512,
+        1824
+      ],
+      "id": "b31d27ba-c250-4b4c-8973-eb65faf9b032",
+      "name": "Parse & Format Output"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b65f6905-1f67-423a-8c56-1435e73d591e",
+              "leftValue": "={{ $json.has_image }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -4288,
+        1824
+      ],
+      "id": "d905d268-4248-4a77-9aba-24b3e40b9519",
+      "name": "Has Image?"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "image_urls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -4064,
+        1728
+      ],
+      "id": "2d1fadde-9250-4f24-8724-21f86abd21c3",
+      "name": "Split Image URLs"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.image_urls }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -3840,
+        1728
+      ],
+      "id": "de44ba90-383e-49cf-bd3d-4d58e80c379b",
+      "name": "Download Property Image"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\n\nif (item.binary && item.binary.data) {\n  const url = String(item.json.image_urls || '');\n  let mimeType = 'image/jpeg';\n  let ext = 'jpeg';\n  if (url.toLowerCase().includes('.png')) { mimeType = 'image/png'; ext = 'png'; }\n  else if (url.toLowerCase().includes('.webp')) { mimeType = 'image/webp'; ext = 'webp'; }\n  item.binary.data.mimeType = mimeType;\n  item.binary.data.fileName = `property_${Date.now()}.${ext}`;\n  item.binary.data.fileExtension = ext;\n}\nreturn item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3616,
+        1728
+      ],
+      "id": "8ad7f84d-2e5e-4f1c-819b-6e2de08f83d7",
+      "name": "Fix Image MIME Type"
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "phoneNumberId": "985121991354322",
+        "additionalFields": {
+          "mediaFileName": "={{ ($('Parse & Format Output').item.json.properties_mentioned_string || 'property').replace(/[^a-zA-Z0-9]/g, '_') }}_image.jpeg"
+        }
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -3392,
+        1728
+      ],
+      "id": "5dd171fe-5451-4b17-a796-a9155bfc7054",
+      "name": "Upload to WhatsApp Media",
+      "webhookId": "41b9b763-f040-4f8f-87f1-a442b134ad3f",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "La66TCAoL0SAnlHu",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "985121991354322",
+        "recipientPhoneNumber": "={{ $('Filter').item.json.contacts[0].wa_id }}",
+        "messageType": "image",
+        "mediaPath": "useMediaId",
+        "mediaId": "={{ $json.id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -3168,
+        1728
+      ],
+      "id": "f381c3ff-d170-4252-aae0-6c5cacbbb2f7",
+      "name": "Send Property Image",
+      "webhookId": "4cde83bf-4e53-4c61-8bcb-fcd71a608fcc",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "La66TCAoL0SAnlHu",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "985121991354322",
+        "recipientPhoneNumber": "={{ $('Filter').item.json.contacts[0].wa_id }}",
+        "textBody": "={{ $('Has Image?').item.json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -2944,
+        1728
+      ],
+      "id": "adaed916-0553-40d7-ba69-994e7803b411",
+      "name": "Send Caption Message",
+      "webhookId": "2d6bd508-f769-483f-97dc-b5f856e35549",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "La66TCAoL0SAnlHu",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "985121991354322",
+        "recipientPhoneNumber": "={{ $('Filter').item.json.contacts[0].wa_id }}",
+        "textBody": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -2944,
+        1920
+      ],
+      "id": "a3b7c543-b6b1-41ff-8587-0d66c2353677",
+      "name": "Send Text Message",
+      "webhookId": "5e1480b0-30f2-4bf8-9284-696d199a7343",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "La66TCAoL0SAnlHu",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1Xz6rUx1sTbwr0OyawYTAgIg5dKe8tA_S5QLgsIZQMfY",
+          "mode": "list",
+          "cachedResultName": "Real Estate CRM"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone": "={{ $('Filter').item.json.contacts[0].wa_id }}",
+            "Name": "={{ $('Parse & Format Output').item.json.display_name }}",
+            "Property Mentioned": "={{ $('Parse & Format Output').item.json.properties_mentioned_string }}",
+            "Budget": "={{ $('Parse & Format Output').item.json.budget }}",
+            "BHK Config": "={{ $('Parse & Format Output').item.json.bhk_config }}",
+            "Lead Type": "={{ $('Parse & Format Output').item.json.conversation_type }}",
+            "Site Visit Info": "={{ $('Parse & Format Output').item.json.appointment_info }}",
+            "Last Interaction": "={{ $now.setZone('Asia/Kolkata').toFormat('dd-MM-yyyy HH:mm') }}",
+            "Lead Status": "={{ $('Parse & Format Output').item.json.conversation_complete ? 'Site Visit Scheduled' : '' }}",
+            "Notes": ""
+          },
+          "matchingColumns": [
+            "Phone"
+          ],
+          "schema": [
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Property Mentioned",
+              "displayName": "Property Mentioned",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "BHK Config",
+              "displayName": "BHK Config",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Lead Type",
+              "displayName": "Lead Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Site Visit Info",
+              "displayName": "Site Visit Info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Last Interaction",
+              "displayName": "Last Interaction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Lead Status",
+              "displayName": "Lead Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -2720,
+        1824
+      ],
+      "id": "9b4a285c-fc30-464e-90dd-87e37a288b4f",
+      "name": "Update Leads Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "oTCiN9ZGbLy41ukm",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a5518f04-6b28-49f2-8913-a2ccbcdd3177",
+              "leftValue": "={{ $('Parse & Format Output').item.json.conversation_complete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -2496,
+        1824
+      ],
+      "id": "91ebaea1-eebe-4b3d-88d6-35f4f8a315ff",
+      "name": "Is Site Visit Complete?"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Xz6rUx1sTbwr0OyawYTAgIg5dKe8tA_S5QLgsIZQMfY",
+          "mode": "list",
+          "cachedResultName": "Real Estate CRM"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "448505877",
+          "mode": "list",
+          "cachedResultName": "Site Visits"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Customer Name": "={{ $('Parse & Format Output').item.json.display_name }}",
+            "Phone": "={{ $('Parse & Format Output').item.json.customer_phone || $('Filter').item.json.contacts[0].wa_id }}",
+            "Property": "={{ $('Parse & Format Output').item.json.properties_mentioned_string }}",
+            "Visit Date": "={{ $('Parse & Format Output').item.json.visit_date }}",
+            "Visit Time": "={{ $('Parse & Format Output').item.json.visit_time }}",
+            "Status": "Scheduled",
+            "Calendar Link": "={{ $('Parse & Format Output').item.json.calendar_event_link }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Property",
+              "displayName": "Property",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Visit Date",
+              "displayName": "Visit Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Visit Time",
+              "displayName": "Visit Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Calendar Link",
+              "displayName": "Calendar Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -2272,
+        1824
+      ],
+      "id": "6b502b2f-fbf4-47f9-8da8-c47661b45026",
+      "name": "Update Site Visits Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "oTCiN9ZGbLy41ukm",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Generate a WhatsApp sales alert for the real estate sales manager.\n\n🆕 New site visit booked:\n- Name: {{ $('Parse & Format Output').item.json.display_name || 'Not provided' }}\n- Phone: {{ $('Parse & Format Output').item.json.customer_phone || $('Filter').item.json.contacts[0].wa_id }}\n- Property: {{ $('Parse & Format Output').item.json.properties_mentioned_string || 'Not specified' }}\n- Budget: {{ $('Parse & Format Output').item.json.budget || 'Not provided' }}\n- BHK: {{ $('Parse & Format Output').item.json.bhk_config || 'Not specified' }}\n- Visit Date: {{ $('Parse & Format Output').item.json.visit_date || 'Not set' }}\n- Visit Time: {{ $('Parse & Format Output').item.json.visit_time || 'Not set' }}\n- Visit Info: {{ $('Parse & Format Output').item.json.appointment_info }}\n- Booked At: {{ $now.setZone('Asia/Kolkata').toFormat('dd MMM yyyy, hh:mm a') }} IST\n\nClean WhatsApp format with emojis. Max 12 lines. End with follow-up action note for team."
+            },
+            {
+              "role": "system",
+              "content": "=You are a sales reporting assistant. Generate concise WhatsApp alert messages. Plain text only — no JSON, no markdown."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -2048,
+        1824
+      ],
+      "id": "b39e961a-0b68-4459-a59b-562adb743d7e",
+      "name": "Generate Sales Alert",
+      "credentials": {
+        "openAiApi": {
+          "id": "DnpqK3oIy5izhgk9",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = $json.output;\nlet alertText = '';\n\ntry {\n  if (typeof output === 'string') {\n    alertText = output.trim();\n  } else if (Array.isArray(output)) {\n    if (output[0]?.content?.[0]?.text) {\n      alertText = output[0].content[0].text.trim();\n    } else if (typeof output[0]?.content === 'string') {\n      alertText = output[0].content.trim();\n    } else if (typeof output[0] === 'string') {\n      alertText = output[0].trim();\n    }\n  } else if (typeof output === 'object' && output !== null) {\n    alertText = output.text || output.content || JSON.stringify(output);\n  }\n} catch(e) {\n  alertText = '🏠 New Site Visit booked. Please check CRM for details.';\n}\n\nif (!alertText) {\n  alertText = '🏠 New Site Visit booked. Please check CRM for details.';\n}\n\nreturn [{ json: { alert_text: alertText } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1696,
+        1824
+      ],
+      "id": "3f664975-d731-4be1-bb76-f7a8d198cba4",
+      "name": "Extract Alert Text"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "985121991354322",
+        "recipientPhoneNumber": "917004607394",
+        "textBody": "={{ $json.alert_text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -1472,
+        1824
+      ],
+      "id": "639cfa92-d5b6-4e4f-836c-231961d7b7d5",
+      "name": "Send Sales Alert to Manager",
+      "webhookId": "462df4fc-d808-4b44-ad55-a2222fddff6a",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "La66TCAoL0SAnlHu",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer Message: {{ $json.messages[0].text.body }}\n\nCurrent Date & Time (IST): {{ $now.setZone('Asia/Kolkata').toFormat('dd MMM yyyy, hh:mm a') }}\nCurrent ISO DateTime (IST): {{ $now.setZone('Asia/Kolkata').toISO() }}\nTimezone: Asia/Kolkata (IST, UTC+5:30)\nCustomer WhatsApp Number: {{ $json.contacts[0].wa_id }}\nCustomer Display Name: {{ $json.contacts[0].profile.name && $json.contacts[0].profile.name !== '' ? $json.contacts[0].profile.name : 'Customer' }}\n\n## CRITICAL Tool Usage Rules\n- Property info / availability / pricing / locations / amenities: ALWAYS use 'Property Knowledge Base' tool\n- Check Calendar: MUST use before confirming any site visit slot\n- Create Site Visit: MUST use to book — use Asia/Kolkata timezone (+05:30)\n- Complete ALL tool calls BEFORE generating final JSON\n- NEVER skip tool calls\n- ALL datetime MUST use +05:30 offset",
+        "options": {
+          "systemMessage": "=# Role & Identity\nYou are **Priya**, a professional real estate consultant. You help customers find properties and book site visits.\n\nYou communicate in clear, professional English. Warm, consultative, concise — never pushy.\n\n---\n\n# ABSOLUTE RULES\n\n1. **Always call tools first** — ANY property question → call 'Property Knowledge Base'\n2. **Always check calendar** — Before any site visit slot → call 'Check Calendar'\n3. **Always create event** — After customer confirms → call 'Create Site Visit', include returned link AND calendar event link\n4. **Never invent data** — Not in KB → say will check with team\n5. **Respond ONLY with valid JSON** — No text outside JSON\n6. **Be brief** — 2-3 sentences max in message field\n7. **Timezone always Asia/Kolkata IST +05:30**\n\n---\n\n# Key Information\n- Token Amount: ₹51,000 to block a unit\n- Home Loan: Tie-ups with leading banks\n- Site Visit: Complimentary\n- All projects RERA-registered\n- Office Hours: Monday–Saturday, 10AM–7PM IST\n\n---\n\n# Qualification — ONE at a time\n- Budget\n- Location preference\n- Config (1/2/3 BHK, villa, plot)\n- Purpose (end-use or investment)\n\n---\n\n# PATH A: Customer Has Specific Property\n1. Query 'Property Knowledge Base' → confirm availability\n2. Share 1-2 highlights (price, BHK, area, possession)\n3. If image URLs in KB → has_image: true, populate image_urls\n4. Ask about pricing/EMI/floor plan\n5. Offer site visit\n\n# PATH B: Customer Browsing\n1. Ask budget/location/config one at a time\n2. Query 'Property Knowledge Base'\n3. Present 1-2 matches briefly\n4. Offer site visit\n\n---\n\n# Site Visit Booking — EXACT STEPS\n\nStep 1: Ask preferred day and time (Mon-Sat, 10AM-6PM IST)\nStep 2: Call 'Check Calendar' immediately when customer gives time\nStep 3: Collect full name + contact number\nStep 4: Call 'Create Site Visit'\n  - Summary: [CustomerName] - Site Visit - [Project]\n  - Description: Name/Phone/Property/Budget/WhatsApp\n  - Start: ISO 8601 with +05:30\n  - End: 1 hour later\nStep 5: Confirm with link\n  - Set conversation_complete: true\n  - Set appointment_info: [Project] on [Date] at [Time] IST\n  - Set calendar_event_link: link returned from tool\n  - Set visit_date: dd-MM-yyyy format\n  - Set visit_time: hh:mm AM/PM format\n\n---\n\n# RESPONSE FORMAT — STRICTLY FOLLOW\nOnly this JSON, no markdown, no extra text:\n\n{\n  \"message\": \"2-3 sentence response\",\n  \"has_image\": false,\n  \"image_urls\": [],\n  \"properties_mentioned\": [],\n  \"customer_name\": \"\",\n  \"customer_phone\": \"\",\n  \"budget\": \"\",\n  \"preferred_location\": \"\",\n  \"bhk_config\": \"\",\n  \"appointment_requested\": false,\n  \"appointment_info\": \"\",\n  \"calendar_event_link\": \"\",\n  \"visit_date\": \"\",\n  \"visit_time\": \"\",\n  \"conversation_type\": \"property_inquiry\",\n  \"conversation_complete\": false\n}\n\nField Rules:\n- calendar_event_link: Fill with Google Calendar link after Create Site Visit tool\n- visit_date: dd-MM-yyyy format only after booking confirmed\n- visit_time: hh:mm AM/PM format only after booking confirmed\n- conversation_complete: true ONLY after site visit created with link sent\n- conversation_type: property_inquiry | pricing_query | site_visit_booking | general_query | investment_inquiry"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -5216,
+        1824
+      ],
+      "id": "776154a3-3f6c-4964-bbbc-c87c949141a4",
+      "name": "Real Estate AI Agent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Real Estate AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT4.1 Mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Real Estate AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Real Estate AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Site Visit": {
+      "ai_tool": [
+        [
+          {
+            "node": "Real Estate AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Real Estate AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Property Knowledge Base": {
+      "ai_tool": [
+        [
+          {
+            "node": "Real Estate AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Property Knowledge Base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Format Output": {
+      "main": [
+        [
+          {
+            "node": "Has Image?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Image?": {
+      "main": [
+        [
+          {
+            "node": "Split Image URLs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Text Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Image URLs": {
+      "main": [
+        [
+          {
+            "node": "Download Property Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Property Image": {
+      "main": [
+        [
+          {
+            "node": "Fix Image MIME Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fix Image MIME Type": {
+      "main": [
+        [
+          {
+            "node": "Upload to WhatsApp Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to WhatsApp Media": {
+      "main": [
+        [
+          {
+            "node": "Send Property Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Property Image": {
+      "main": [
+        [
+          {
+            "node": "Send Caption Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Caption Message": {
+      "main": [
+        [
+          {
+            "node": "Update Leads Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Text Message": {
+      "main": [
+        [
+          {
+            "node": "Update Leads Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Leads Sheet": {
+      "main": [
+        [
+          {
+            "node": "Is Site Visit Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Site Visit Complete?": {
+      "main": [
+        [
+          {
+            "node": "Update Site Visits Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Site Visits Sheet": {
+      "main": [
+        [
+          {
+            "node": "Generate Sales Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Sales Alert": {
+      "main": [
+        [
+          {
+            "node": "Extract Alert Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Alert Text": {
+      "main": [
+        [
+          {
+            "node": "Send Sales Alert to Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Real Estate AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse & Format Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "76a4ab06-20b8-4d8e-871f-f5b769bb35f8",
+  "meta": {
+    "instanceId": "9175954dc53afbca4a7115114f46f6039ddb6f15e344d74903697afebf7d7f10"
+  },
+  "id": "V6pjRmil5wD928Ue",
+  "tags": []
+}

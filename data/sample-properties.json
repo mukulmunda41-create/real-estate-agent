@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Green Acres Plots",
+    "property_type": "plot",
+    "city": "Pune",
+    "location": "Wagholi, Pune",
+    "bhk_config": "NA Plots",
+    "price": "₹45 Lakh onwards",
+    "price_numeric": 4500000,
+    "carpet_area": "1500-3000 sq.ft.",
+    "possession": "Ready to register",
+    "amenities": ["Gated community", "Internal roads", "Street lighting", "Water connection", "Garden"],
+    "rera_id": "P52100012345",
+    "description": "RERA-approved NA residential plots in Wagholi, East Pune. Clear titles, ready for registration. Great connectivity to Kharadi IT hub and Pune airport."
+  },
+  {
+    "name": "Sunrise Residency",
+    "property_type": "apartment",
+    "city": "Pune",
+    "location": "Hinjewadi Phase 1, Pune",
+    "bhk_config": "2 & 3 BHK",
+    "price": "₹78 Lakh onwards",
+    "price_numeric": 7800000,
+    "carpet_area": "720-1050 sq.ft.",
+    "possession": "Dec 2026",
+    "amenities": ["Clubhouse", "Swimming pool", "Gym", "Kids play area", "24x7 security", "Covered parking"],
+    "rera_id": "P52100023456",
+    "description": "Premium 2 and 3 BHK apartments in Hinjewadi Phase 1, walking distance to major IT parks. Modern amenities and excellent rental potential."
+  },
+  {
+    "name": "Lake View Villas",
+    "property_type": "villa",
+    "city": "Pune",
+    "location": "Bhugaon, Pune",
+    "bhk_config": "4 BHK Villas",
+    "price": "₹2.4 Cr onwards",
+    "price_numeric": 24000000,
+    "carpet_area": "2800-3500 sq.ft.",
+    "possession": "Ready to move",
+    "amenities": ["Private garden", "Terrace", "Clubhouse", "Lake view", "Power backup", "Gated security"],
+    "rera_id": "P52100034567",
+    "description": "Luxury 4 BHK independent villas overlooking the lake at Bhugaon, near Lavasa road. Ready to move, premium gated community."
+  },
+  {
+    "name": "Skyline Heights",
+    "property_type": "apartment",
+    "city": "Mumbai",
+    "location": "Andheri West, Mumbai",
+    "bhk_config": "1 & 2 BHK",
+    "price": "₹1.6 Cr onwards",
+    "price_numeric": 16000000,
+    "carpet_area": "450-680 sq.ft.",
+    "possession": "Mar 2027",
+    "amenities": ["Rooftop deck", "Gym", "Co-working space", "Concierge", "EV charging", "Parking"],
+    "rera_id": "P51800045678",
+    "description": "Smart 1 and 2 BHK homes in Andheri West with metro connectivity. Ideal for first-time buyers and investors in Mumbai."
+  },
+  {
+    "name": "Palm Greens Plots",
+    "property_type": "plot",
+    "city": "Nashik",
+    "location": "Gangapur Road, Nashik",
+    "bhk_config": "NA Plots",
+    "price": "₹28 Lakh onwards",
+    "price_numeric": 2800000,
+    "carpet_area": "1200-2400 sq.ft.",
+    "possession": "Ready to register",
+    "amenities": ["Gated layout", "Avenue plantation", "Underground drainage", "Children's park"],
+    "rera_id": "P52700056789",
+    "description": "Affordable NA plots on Gangapur Road, Nashik with clear titles. Excellent appreciation potential in a fast-developing corridor."
+  }
+]
