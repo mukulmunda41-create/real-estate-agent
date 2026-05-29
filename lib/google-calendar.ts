@@ -57,33 +57,66 @@ export function istWindow(visitDate: string, visitTime: string): { start: string
   };
 }
 
+export type CalendarEvent = { id: string; link: string };
+
+type EventOpts = { summary: string; description: string; visitDate: string; visitTime: string };
+
+function eventBody(opts: EventOpts) {
+  const { start, end } = istWindow(opts.visitDate, opts.visitTime);
+  return {
+    summary: opts.summary,
+    description: opts.description,
+    start: { dateTime: start, timeZone: "Asia/Kolkata" },
+    end: { dateTime: end, timeZone: "Asia/Kolkata" },
+  };
+}
+
 // Create a site-visit event on the connected Google Calendar.
-// Returns the event's htmlLink, or "" if calendar isn't connected.
-export async function createCalendarEvent(opts: {
-  summary: string;
-  description: string;
-  visitDate: string;
-  visitTime: string;
-}): Promise<string> {
-  if (!(await calendarConfigured())) return "";
+// Returns { id, link }, or empty strings if calendar isn't connected.
+export async function createCalendarEvent(opts: EventOpts): Promise<CalendarEvent> {
+  if (!(await calendarConfigured())) return { id: "", link: "" };
   const token = await getAccessToken();
   const calendarId = await getCalendarId();
-  const { start, end } = istWindow(opts.visitDate, opts.visitTime);
 
   const res = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        summary: opts.summary,
-        description: opts.description,
-        start: { dateTime: start, timeZone: "Asia/Kolkata" },
-        end: { dateTime: end, timeZone: "Asia/Kolkata" },
-      }),
+      body: JSON.stringify(eventBody(opts)),
     }
   );
   const json = await res.json();
   if (!res.ok) throw new Error(`Calendar event create failed: ${JSON.stringify(json)}`);
-  return (json.htmlLink as string) || "";
+  return { id: (json.id as string) || "", link: (json.htmlLink as string) || "" };
+}
+
+// Update an existing calendar event's time/details (used when a visit is edited).
+export async function updateCalendarEvent(eventId: string, opts: EventOpts): Promise<CalendarEvent> {
+  if (!eventId || !(await calendarConfigured())) return { id: eventId, link: "" };
+  const token = await getAccessToken();
+  const calendarId = await getCalendarId();
+
+  const res = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+    {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(eventBody(opts)),
+    }
+  );
+  const json = await res.json();
+  if (!res.ok) throw new Error(`Calendar event update failed: ${JSON.stringify(json)}`);
+  return { id: (json.id as string) || eventId, link: (json.htmlLink as string) || "" };
+}
+
+// Delete a calendar event (used when a visit is cancelled). Best-effort.
+export async function deleteCalendarEvent(eventId: string): Promise<void> {
+  if (!eventId || !(await calendarConfigured())) return;
+  const token = await getAccessToken();
+  const calendarId = await getCalendarId();
+  await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+    { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
+  );
 }

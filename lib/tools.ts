@@ -189,14 +189,18 @@ export async function executeTool(
     // Push to Google Calendar (best-effort — booking already succeeded in our DB).
     let calendarLink = "";
     try {
-      calendarLink = await createCalendarEvent({
+      const ev = await createCalendarEvent({
         summary: `Site visit: ${property || "Property"} — ${customerName || ctx.phone}`,
         description: `Customer: ${customerName || "—"}\nPhone: ${ctx.phone}\nProperty: ${property || "—"}`,
         visitDate,
         visitTime,
       });
-      if (calendarLink) {
-        await supabaseAdmin().from("site_visits").update({ calendar_link: calendarLink }).eq("id", data.id);
+      calendarLink = ev.link;
+      if (ev.id || ev.link) {
+        await supabaseAdmin()
+          .from("site_visits")
+          .update({ calendar_link: ev.link, calendar_event_id: ev.id })
+          .eq("id", data.id);
       }
     } catch (e) {
       await logEvent(ctx.phone, "error", "Calendar event failed", { error: String(e) }, ctx.agent);
