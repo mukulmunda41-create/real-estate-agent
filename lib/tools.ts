@@ -2,6 +2,7 @@ import type OpenAI from "openai";
 import { supabaseAdmin } from "./supabase";
 import { embed } from "./embeddings";
 import { logEvent } from "./events";
+import { createCalendarEvent, istWindow } from "./google-calendar";
 import type { PropertyMatch } from "./types";
 
 // ----- Tool schemas exposed to the model -----
@@ -148,12 +149,22 @@ export async function executeTool(
       };
     }
 
+    const customerName = String(args.customer_name ?? "");
+    const property = String(args.property ?? "");
+    // Proper timestamp alongside the human-readable date/time (best-effort parse).
+    let visitAt: string | null = null;
+    try {
+      visitAt = istWindow(visitDate, visitTime).start;
+    } catch {
+      visitAt = null;
+    }
     const row = {
       lead_phone: ctx.phone,
-      customer_name: String(args.customer_name ?? ""),
-      property: String(args.property ?? ""),
+      customer_name: customerName,
+      property,
       visit_date: visitDate,
       visit_time: visitTime,
+      visit_at: visitAt,
       status: "Scheduled",
       calendar_link: "",
     };
@@ -174,8 +185,25 @@ export async function executeTool(
       await logEvent(ctx.phone, "error", "book_site_visit failed", { error: error.message }, ctx.agent);
       return { success: false, error: error.message };
     }
-    await logEvent(ctx.phone, "crm", "Site visit booked", row, ctx.agent);
-    return { success: true, visit_id: data.id, calendar_link: "" };
+
+    // Push to Google Calendar (best-effort — booking already succeeded in our DB).
+    let calendarLink = "";
+    try {
+      calendarLink = await createCalendarEvent({
+        summary: `Site visit: ${property || "Property"} — ${customerName || ctx.phone}`,
+        description: `Customer: ${customerName || "—"}\nPhone: ${ctx.phone}\nProperty: ${property || "—"}`,
+        visitDate,
+        visitTime,
+      });
+      if (calendarLink) {
+        await supabaseAdmin().from("site_visits").update({ calendar_link: calendarLink }).eq("id", data.id);
+      }
+    } catch (e) {
+      await logEvent(ctx.phone, "error", "Calendar event failed", { error: String(e) }, ctx.agent);
+    }
+
+    await logEvent(ctx.phone, "crm", "Site visit booked", { ...row, calendar_link: calendarLink }, ctx.agent);
+    return { success: true, visit_id: data.id, calendar_link: calendarLink };
   }
 
   return { error: `unknown tool ${name}` };

@@ -1,7 +1,7 @@
 import { orchestrate } from "./agents/orchestrator";
 import { logEvent, logMessage, recentHistory } from "./events";
 import { upsertLead, sendManagerAlert } from "./crm";
-import { stt, tts } from "./sarvam";
+import { stt, tts } from "./gemini";
 import {
   sendText,
   sendImageById,

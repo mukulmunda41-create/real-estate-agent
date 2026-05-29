@@ -25,6 +25,7 @@ export async function upsertLead(
     budget: result.budget || null,
     preferred_location: result.preferred_location || null,
     bhk_config: result.bhk_config || null,
+    purpose: result.purpose || null,
     lead_type: result.conversation_type,
     lead_status: result.conversation_complete ? "Site Visit Scheduled" : "Active",
     last_message: result.message,

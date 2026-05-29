@@ -38,7 +38,6 @@ export type HandoffTarget =
 export type SpecialistResult = AgentResult & {
   qualified: boolean;
   wants_visit: boolean;
-  purpose: string;
   handoff_to: HandoffTarget;
 };
 

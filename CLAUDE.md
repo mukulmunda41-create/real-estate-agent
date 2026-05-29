@@ -34,7 +34,7 @@ There is no unit-test framework; verify behaviour with `test:agent` and by inspe
 `app/api/whatsapp/webhook/route.ts` → `lib/handler.ts` → `lib/agents/orchestrator.ts` → `lib/agents/runtime.ts` (per specialist) → `lib/tools.ts`.
 
 1. **Webhook** verifies Meta's `X-Hub-Signature-256` (HMAC over raw body), parses messages, returns `200` immediately, and does all real work in Next's `after()` so WhatsApp doesn't retry.
-2. **handler** dedups by WhatsApp message id (`processed_messages` table), marks read + shows typing, rate-limits per phone, transcribes voice (Sarvam) / base64-encodes images, loads history, then calls `orchestrate`. It loads `recentHistory` **before** logging the current turn so the live message isn't duplicated in the LLM context.
+2. **handler** dedups by WhatsApp message id (`processed_messages` table), marks read + shows typing, rate-limits per phone, transcribes voice (Gemini) / base64-encodes images, loads history, then calls `orchestrate`. It loads `recentHistory` **before** logging the current turn so the live message isn't duplicated in the LLM context.
 3. **orchestrator** picks the starting specialist from the lead's `stage`, runs it, and follows in-turn `handoff_to` up to 3 hops (e.g. qualify → recommend → book). A self-handoff guard prevents an agent looping to itself.
 4. **runtime** runs one specialist's tool-calling loop. Every specialist must end its turn by calling the shared `respond` tool exactly once — that single call carries both the customer-facing `message` and all structured fields (budget, stage flags, `handoff_to`, etc.). `normalize()` defensively coerces/validates that output.
 5. **handler** then sends images, an optional voice reply (only when input was voice), the text reply, upserts the lead + schedules the next follow-up, and alerts the manager on booking.
@@ -50,14 +50,14 @@ There is no unit-test framework; verify behaviour with `test:agent` and by inspe
 
 ## Tools & RAG
 
-`lib/tools.ts` defines the three model-callable tools (`search_properties`, `check_calendar`, `book_site_visit`) and executes them. `search_properties` is **hybrid RAG**: it embeds the query (OpenAI) and calls the `match_properties` Postgres RPC, which combines pgvector cosine similarity with optional structured filters (`filter_city`, `max_price` against `properties.price_numeric`). `book_site_visit` guards against double-booking (pre-check + a unique partial index on `site_visits(visit_date, visit_time)`).
+`lib/tools.ts` defines the three model-callable tools (`search_properties`, `check_calendar`, `book_site_visit`) and executes them. `search_properties` is **hybrid RAG**: it embeds the query (OpenAI) and calls the `match_properties` Postgres RPC, which combines pgvector cosine similarity with optional structured filters (`filter_city`, `max_price` against `properties.price_numeric`). `book_site_visit` guards against double-booking (pre-check + a unique partial index on `site_visits(visit_date, visit_time)`) and, if Google Calendar is configured (`lib/google-calendar.ts`, OAuth refresh token), pushes a calendar event and stores its link in `site_visits.calendar_link` (best-effort — booking still succeeds if the calendar call fails). Slot availability (`check_calendar`) is still read from Supabase, the source of truth.
 
 ## Data & external services
 
 - **Supabase** is the only datastore. `lib/supabase.ts` exposes a service-role admin client used by all server code — it **bypasses RLS** and must never be imported into client components. The dashboard reads via the anon client (`lib/supabase-browser.ts`) under RLS (`authenticated` can read; server writes via service role). Realtime streams `messages`/`agent_events`/`leads`/`site_visits` to the dashboard.
 - **Schema** lives in `supabase/migrations/` but is applied to the **hosted** Supabase project (via the Supabase MCP/dashboard), not a local stack. Keep migration files in sync when you change schema remotely.
 - `lib/env.ts` centralizes all env access — add new env vars here. Secrets live in `.env.local` (gitignored); `OPENAI_CHAT_MODEL` is set there (currently `gpt-4.1` — `gpt-4.1-mini` was unreliable at following the multi-rule prompts).
-- **OpenAI** (`lib/openai.ts`): chat + embeddings. **Sarvam** (`lib/sarvam.ts`): STT (`saarika`) + TTS (`bulbul`, speaker "priya"). **WhatsApp Cloud API** (`lib/whatsapp.ts`): Graph v21; all sends check `res.ok` and throw on failure.
+- **OpenAI** (`lib/openai.ts`): chat + embeddings. **Gemini** (`lib/gemini.ts`): STT via audio understanding (`gemini-2.5-flash`) + TTS (`gemini-2.5-flash-preview-tts`, voice "Aoede"); TTS returns 24kHz 16-bit PCM which is encoded to MP3 (`@breezystack/lamejs`) for WhatsApp. **WhatsApp Cloud API** (`lib/whatsapp.ts`): Graph v21; all sends check `res.ok` and throw on failure.
 
 ## Proactive agents & cron
 

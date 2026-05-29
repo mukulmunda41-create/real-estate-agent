@@ -34,6 +34,7 @@ export type AgentResult = {
   budget: string;
   preferred_location: string;
   bhk_config: string;
+  purpose: string;               // end-use | investment
   appointment_requested: boolean;
   appointment_info: string;
   calendar_event_link: string;
