@@ -6,18 +6,28 @@ const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 type GenPart = { text?: string; inlineData?: { data?: string }; inline_data?: { data?: string } };
 type GenResponse = { candidates?: { content?: { parts?: GenPart[] } }[] };
 
-async function generate(model: string, body: unknown): Promise<GenResponse> {
-  const res = await fetch(`${BASE}/${model}:generateContent`, {
-    method: "POST",
-    headers: {
-      "x-goog-api-key": env.geminiApiKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(`Gemini ${model} failed: ${JSON.stringify(json)}`);
-  return json as GenResponse;
+// Gemini's flash models occasionally return 503 (UNAVAILABLE) / 429 under load.
+// These are transient, so retry with a short backoff before giving up — a single
+// spike must not drop a customer's voice note.
+async function generate(model: string, body: unknown, retries = 2): Promise<GenResponse> {
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`${BASE}/${model}:generateContent`, {
+      method: "POST",
+      headers: {
+        "x-goog-api-key": env.geminiApiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    if (res.ok) return json as GenResponse;
+    const transient = res.status === 429 || res.status >= 500;
+    if (transient && attempt < retries) {
+      await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
+      continue;
+    }
+    throw new Error(`Gemini ${model} failed: ${JSON.stringify(json)}`);
+  }
 }
 
 // Speech-to-text + language detection via a multimodal Gemini model.

@@ -82,10 +82,21 @@ export async function handleInbound(msg: Inbound): Promise<void> {
     await logEvent(msg.phone, "received", "Voice note received");
     const { bytes, mimeType } = await downloadMedia(msg.mediaId);
     inAudioUrl = await archiveAudio(msg.phone, bytes, mimeType, "in");
-    const r = await stt(bytes, mimeType, "voice_in.ogg");
-    userText = r.transcript;
-    languageCode = r.languageCode;
-    await logEvent(msg.phone, "stt", "Transcribed voice", { transcript: userText, language: languageCode });
+    // STT can fail transiently (Gemini 503/429). Don't let that abort the whole
+    // turn — fall back to a friendly text reply so the customer always hears back.
+    try {
+      const r = await stt(bytes, mimeType, "voice_in.ogg");
+      userText = r.transcript;
+      languageCode = r.languageCode;
+      await logEvent(msg.phone, "stt", "Transcribed voice", { transcript: userText, language: languageCode });
+    } catch (e) {
+      await logEvent(msg.phone, "error", "STT failed", { error: String(e) });
+      await sendText(
+        msg.phone,
+        "Sorry, मैं आपकी voice note अभी ठीक से सुन नहीं पाई 🙏 कृपया थोड़ी देर में दोबारा भेजें या टाइप करके बता दें।"
+      );
+      return;
+    }
   } else if (msg.type === "image") {
     await logEvent(msg.phone, "received", "Image received");
     if (msg.mediaId) {
