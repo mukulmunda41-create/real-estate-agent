@@ -46,7 +46,7 @@ export default function DashboardShell({ children, title }: { children: React.Re
 
   useEffect(() => {
     const t = setInterval(
-      () => setClock(new Date().toLocaleTimeString("en-IN", { hour12: false, timeZone: "Asia/Kolkata" })),
+      () => setClock(new Date().toLocaleTimeString("en-US", { hour12: true, timeZone: "Asia/Kolkata" })),
       1000
     );
     return () => clearInterval(t);
