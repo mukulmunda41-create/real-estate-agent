@@ -46,7 +46,21 @@ export default function DashboardShell({ children, title }: { children: React.Re
 
   useEffect(() => {
     const t = setInterval(
-      () => setClock(new Date().toLocaleTimeString("en-US", { hour12: true, timeZone: "Asia/Kolkata" })),
+      () =>
+        setClock(
+          new Date()
+            .toLocaleString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: true,
+              timeZone: "Asia/Kolkata",
+            })
+            .replace(/\b(am|pm)\b/i, (m) => m.toUpperCase())
+        ),
       1000
     );
     return () => clearInterval(t);
@@ -108,7 +122,7 @@ export default function DashboardShell({ children, title }: { children: React.Re
               <span className="h-2 w-2 rounded-full bg-emerald-400 neon-pulse" style={{ color: "#34d399" }} />
               System live
             </span>
-            <span className="font-mono text-emerald-300">{clock} IST</span>
+            <span className="font-mono text-emerald-300">{clock}</span>
           </div>
         </header>
         <main className="p-6">{children}</main>
