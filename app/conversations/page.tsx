@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import { useRealtime } from "@/lib/use-realtime";
+import { clockTime as time, shortDate as day } from "@/lib/format";
 
 type Message = {
   id: string;
@@ -22,13 +23,6 @@ type Lead = {
   name: string | null;
   lead_status: string | null;
 };
-
-function time(ts: string) {
-  return new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
-}
-function day(ts: string) {
-  return new Date(ts).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
-}
 
 export default function ConversationsPage() {
   // Pull a wide window of messages + leads; both stay live via Realtime.

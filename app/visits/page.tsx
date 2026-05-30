@@ -4,6 +4,7 @@ import { useState } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import { useRealtime } from "@/lib/use-realtime";
 import { getBrowserClient } from "@/lib/supabase-browser";
+import { prettyVisitDate, prettyVisitTime } from "@/lib/format";
 
 type Visit = {
   id: string;
@@ -146,8 +147,8 @@ export default function VisitsPage() {
                 <td className="px-4 py-3 font-medium text-slate-100">{v.customer_name || "—"}</td>
                 <td className="px-4 py-3 text-slate-400">{v.lead_phone || "—"}</td>
                 <td className="px-4 py-3 text-slate-300">{v.property || "—"}</td>
-                <td className="px-4 py-3 text-slate-300">{v.visit_date || "—"}</td>
-                <td className="px-4 py-3 text-slate-300">{v.visit_time || "—"}</td>
+                <td className="px-4 py-3 text-slate-300">{prettyVisitDate(v.visit_date)}</td>
+                <td className="px-4 py-3 text-slate-300 tabular-nums">{prettyVisitTime(v.visit_time)}</td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2.5 py-1 text-xs ${STATUS_STYLE[v.status || "Scheduled"] || STATUS_STYLE.Scheduled}`}>
                     {v.status || "Scheduled"}

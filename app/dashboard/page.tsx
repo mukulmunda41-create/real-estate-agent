@@ -7,6 +7,7 @@ import { Sparkline, Donut, Funnel, Heatmap, Gauge } from "@/components/charts";
 import { useRealtime } from "@/lib/use-realtime";
 import { useStats } from "@/lib/use-stats";
 import { getBrowserClient } from "@/lib/supabase-browser";
+import { clockTime as time } from "@/lib/format";
 
 type AgentEvent = { id: string; event_type: string; agent: string | null; label: string | null; phone: string | null; created_at: string };
 type Message = { id: string; phone: string; role: string; msg_type: string; content: string | null; transcript: string | null; created_at: string };
@@ -18,9 +19,6 @@ function money(n: number) {
   if (n >= 1e7) return `₹${(n / 1e7).toFixed(2)} Cr`;
   if (n >= 1e5) return `₹${(n / 1e5).toFixed(1)} L`;
   return `₹${n.toLocaleString("en-IN")}`;
-}
-function time(ts: string) {
-  return new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 }
 const pretty = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
