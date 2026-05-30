@@ -180,6 +180,7 @@ export async function handleInbound(msg: Inbound): Promise<void> {
 
   // 2) Short voice reply — only when the customer used voice
   let outAudioUrl: string | null = null;
+  let voiceSent = false;
   if (isVoice && result.voice_summary) {
     try {
       const mp3 = await tts(result.voice_summary, languageCode);
@@ -187,14 +188,27 @@ export async function handleInbound(msg: Inbound): Promise<void> {
       const mediaId = await uploadMedia(mp3, "audio/mpeg", "reply.mp3");
       await sendAudioById(msg.phone, mediaId);
       await logEvent(msg.phone, "tts", "Voice reply sent", { text: result.voice_summary });
+      voiceSent = true;
     } catch (e) {
       await logEvent(msg.phone, "error", "TTS failed", { error: String(e) });
     }
   }
 
-  // 3) Full detail text (always)
-  await sendText(msg.phone, result.message);
-  await logEvent(msg.phone, "sent", "Reply sent");
+  // 3) Text reply. For text input, always. For voice input we keep it voice-only
+  // for simple chit-chat, but still send text when there are details that belong
+  // in writing (property cards/prices, a booking confirmation), or as a fallback
+  // if the voice reply couldn't be generated.
+  const hasDetails =
+    result.has_image ||
+    result.image_urls.length > 0 ||
+    result.properties_mentioned.length > 0 ||
+    !!result.visit_date ||
+    result.message.length > 140;
+  const sendTextReply = !isVoice || !voiceSent || hasDetails;
+  if (sendTextReply) {
+    await sendText(msg.phone, result.message);
+    await logEvent(msg.phone, "sent", "Reply sent");
+  }
   await logMessage({
     phone: msg.phone,
     role: "assistant",
