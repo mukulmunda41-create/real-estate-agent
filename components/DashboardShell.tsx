@@ -82,7 +82,7 @@ export default function DashboardShell({ children, title }: { children: React.Re
             <span className="relative text-aurora font-black">◈</span>
           </div>
           <div>
-            <div className="text-[13px] font-extrabold tracking-wide text-slate-100">REAL ESTATE AI</div>
+            <div className="text-[13px] font-extrabold tracking-wide text-slate-100">REAL ESTATE AGENT</div>
             <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">AI Command Center</div>
           </div>
         </div>
