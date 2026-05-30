@@ -117,13 +117,8 @@ export default function DashboardShell({ children, title }: { children: React.Re
           </div>
         </div>
 
-        {/* system status + sign out */}
+        {/* sign out */}
         <div className="border-t border-white/10 px-4 py-3">
-          <div className="mb-2 flex items-center gap-2 text-[11px]">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 neon-pulse" style={{ color: "#34d399" }} />
-            <span className="font-medium text-emerald-300">All Systems Operational</span>
-          </div>
-          <div className="mb-2 text-[10px] text-slate-500">99.98% uptime · v0.1</div>
           <button
             onClick={async () => {
               await getBrowserClient().auth.signOut();

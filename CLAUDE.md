@@ -46,7 +46,7 @@ There is no unit-test framework; verify behaviour with `test:agent` and by inspe
 - **Pipeline stages** (`leads.stage`): `new → qualifying → qualified → recommending → booking → booked`, plus `cold`. `agentForStage` maps stage→starting agent; `nextStage` advances it. `booked` routes to `concierge` (not back into recommendation).
 - **Memory is two-layer**: raw conversation = last ~20 `messages` rows fed to the LLM each turn; durable facts (budget, location, BHK, purpose, properties, name) live on the `leads` row and are re-injected every turn via `sharedNote()` / the orchestrator's `merge()`, so they survive past the 20-message window.
 
-**Adding/changing an agent touches 4 files in lockstep**: `lib/agents/types.ts` (`AgentName`, `AGENT_LABELS`, `AGENT_ORDER`, `HandoffTarget`), `lib/agents/definitions.ts` (`AGENT_DEFS`, and `common()` if it's a handoff target), `lib/agents/runtime.ts` (the `respond` tool's `handoff_to` enum + `normalize()` validation list), and `lib/agents/orchestrator.ts` (`agentForStage` / handoff-follow guard). For dashboard visibility, also add it to `components/AgentPipeline.tsx`.
+**Adding/changing an agent touches 4 files in lockstep**: `lib/agents/types.ts` (`AgentName`, `AGENT_LABELS`, `AGENT_ORDER`, `HandoffTarget`), `lib/agents/definitions.ts` (`AGENT_DEFS`, and `common()` if it's a handoff target), `lib/agents/runtime.ts` (the `respond` tool's `handoff_to` enum + `normalize()` validation list), and `lib/agents/orchestrator.ts` (`agentForStage` / handoff-follow guard). For dashboard visibility, also add it to the `AGENTS` array in `components/AIOrchestratorHub.tsx`.
 
 ## Tools & RAG
 
@@ -58,6 +58,18 @@ There is no unit-test framework; verify behaviour with `test:agent` and by inspe
 - **Schema** lives in `supabase/migrations/` but is applied to the **hosted** Supabase project (via the Supabase MCP/dashboard), not a local stack. Keep migration files in sync when you change schema remotely.
 - `lib/env.ts` centralizes all env access — add new env vars here. Secrets live in `.env.local` (gitignored); `OPENAI_CHAT_MODEL` is set there (currently `gpt-4.1` — `gpt-4.1-mini` was unreliable at following the multi-rule prompts).
 - **OpenAI** (`lib/openai.ts`): chat + embeddings. **Gemini** (`lib/gemini.ts`): STT via audio understanding (`gemini-2.5-flash`) + TTS (`gemini-2.5-flash-preview-tts`, voice "Aoede"); TTS returns 24kHz 16-bit PCM which is encoded to MP3 (`@breezystack/lamejs`) for WhatsApp. **WhatsApp Cloud API** (`lib/whatsapp.ts`): Graph v21; all sends check `res.ok` and throw on failure.
+
+## Dashboard (admin UI)
+
+Every page under `app/` except `/login` is a **client component** whose content is wrapped in `components/DashboardShell.tsx` — the auth gate. The shell calls Supabase Auth `getSession()`, redirects to `/login` if absent, and renders the sidebar + header; root `/` just `redirect()`s to `/dashboard`. `/dashboard` is the live command center; `/leads`, `/visits`, `/properties`, `/conversations`, `/settings` are the operational pages.
+
+**Live data reaches the browser two ways**, both via the anon client (`lib/supabase-browser.ts`) under RLS (`authenticated` may read):
+- `lib/use-realtime.ts` — `useRealtime(table)` does an initial fetch then streams inserts/updates via Supabase Realtime. **Gotcha:** Realtime enforces RLS, so the socket must carry the user JWT (`sb.realtime.setAuth(token)`) **before** `subscribe()` or `postgres_changes` deliver nothing (looks like a stale dashboard). The effect also bails out of subscribing if it was already torn down (React StrictMode double-mount) to avoid a "cannot add postgres_changes callbacks after subscribe()" crash.
+- `lib/use-stats.ts` — polls `app/api/stats/route.ts` every 10s for derived KPIs/funnel/heatmap/lead-mix, all computed server-side from `leads`/`messages`/`site_visits`. Dashboard-facing API routes (`/api/stats`, `/api/visits`, `/api/properties`, `/api/google/*`) authorize with the Supabase bearer token via `lib/auth.ts` (`requireUser` / `requireCronOrAdmin`).
+
+**The orchestration hub** (`components/AIOrchestratorHub.tsx`) is the centerpiece: it derives each agent's live state (active/processing/waiting/idle) from recent `agent_events` rows (`event_type === "llm"` within time windows) and renders the canvas reactor (`HoloBrain` brain + `ParticleField` sparks), SVG connector lines with animated data packets, and per-agent operational cards. `lib/events.ts::logEvent` is what populates `agent_events` from the server pipeline — the dashboard is a read-only mirror of that feed.
+
+Charts are hand-rolled **pure SVG/CSS** in `components/charts.tsx` (no charting library). All motion lives in `app/globals.css` as a keyframe/utility system (reactor glow, flowing connectors, glass sheen, pointer-tracked card glow) and honors `prefers-reduced-motion`. Note `components/AgentPipeline.tsx` and `RobotAvatar.tsx` are **legacy** — superseded by `AIOrchestratorHub` and no longer rendered.
 
 ## Proactive agents & cron
 

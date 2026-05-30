@@ -277,7 +277,7 @@ export default function DashboardPage() {
         <div className="space-y-5">
           {/* Live conversation — fixed-height flex column; only the messages
               area scrolls, composer stays pinned, page never moves */}
-          <div ref={panelRef} className="hud hud-edge sheen flex h-[68vh] max-h-[640px] min-h-[460px] flex-col overflow-hidden rounded-2xl p-4">
+          <div ref={panelRef} className="hud hud-edge sheen flex h-[46vh] max-h-[480px] min-h-[360px] flex-col overflow-hidden rounded-2xl p-4">
             <div className="mb-3 flex shrink-0 items-center justify-between">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Live Conversation</h3>
               <span className="flex items-center gap-1.5 text-[11px] text-emerald-300">
