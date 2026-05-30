@@ -32,7 +32,8 @@ export function useRealtime<T extends Row>(
         .select("*")
         .order(orderBy, { ascending: false })
         .limit(limit);
-      if (active && data) setRows(data as T[]);
+      if (!active) return; // cleaned up (e.g. StrictMode remount) before we got here — don't subscribe
+      if (data) setRows(data as T[]);
 
       channel = sb
         .channel(`rt-${table}`)

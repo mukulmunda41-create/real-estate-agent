@@ -3,6 +3,20 @@
 
 const IST = "Asia/Kolkata";
 
+// "just now" / "3m ago" / "2h ago" — compact relative time for live feeds.
+export function timeAgo(ts: string): string {
+  const d = new Date(ts);
+  if (isNaN(+d)) return "";
+  const s = Math.max(0, Math.floor((Date.now() - +d) / 1000));
+  if (s < 8) return "just now";
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
 // "4:30 PM" — clock time from an ISO timestamp.
 export function clockTime(ts: string): string {
   const d = new Date(ts);
