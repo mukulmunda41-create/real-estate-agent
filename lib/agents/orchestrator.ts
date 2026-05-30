@@ -54,11 +54,15 @@ function merge(prev: Partial<SpecialistResult>, r: SpecialistResult): Partial<Sp
 export async function orchestrate(
   ctx: AgentContext,
   startStage: string,
-  history: ChatTurn[]
+  history: ChatTurn[],
+  seed: Partial<SpecialistResult> = {}
 ): Promise<OrchestrationResult> {
   let agent = agentForStage(startStage || "new");
   let stage = startStage || "new";
-  let merged: Partial<SpecialistResult> = {};
+  // Start from the lead's known durable facts so they're re-injected into each
+  // specialist's prompt and carried back into the upsert even when the active
+  // agent doesn't re-state them this turn.
+  let merged: Partial<SpecialistResult> = { ...seed };
   let last!: SpecialistResult;
   const agentsRun: AgentName[] = [];
 

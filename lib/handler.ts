@@ -150,10 +150,20 @@ export async function handleInbound(msg: Inbound): Promise<void> {
 
   const { data: existing } = await supabaseAdmin()
     .from("leads")
-    .select("stage")
+    .select("stage, budget, preferred_location, bhk_config, purpose, properties_mentioned")
     .eq("phone", msg.phone)
     .maybeSingle();
-  const result = await orchestrate(ctx, existing?.stage || "new", history);
+  // Seed the orchestrator with durable facts already on the lead row, so they
+  // survive past the 20-message history window AND aren't wiped on turns where
+  // the active agent doesn't re-emit them (e.g. a general_query to concierge).
+  const seed = {
+    budget: existing?.budget || "",
+    preferred_location: existing?.preferred_location || "",
+    bhk_config: existing?.bhk_config || "",
+    purpose: existing?.purpose || "",
+    properties_mentioned: existing?.properties_mentioned || [],
+  };
+  const result = await orchestrate(ctx, existing?.stage || "new", history, seed);
 
   // 1) Property images (if any)
   if (result.has_image && result.image_urls.length) {

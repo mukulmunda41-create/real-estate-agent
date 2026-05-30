@@ -17,21 +17,33 @@ export async function upsertLead(
   result: AgentResult,
   extra: Record<string, unknown> = {}
 ): Promise<void> {
-  const row = {
+  const stage = (extra.stage as string | undefined) || "";
+  // Non-destructive upsert: a Supabase upsert only writes the keys present in
+  // the object, so we OMIT durable qualification facts when this turn didn't
+  // produce a value. That way a later general-chat turn (which returns empty
+  // budget/location/etc.) never wipes facts collected earlier. Combined with
+  // the orchestrator seed, these fields are both remembered and preserved.
+  const row: Record<string, unknown> = {
     phone: ctx.phone,
     name: displayName(result, ctx),
     wa_display_name: ctx.waDisplayName || null,
-    properties_mentioned: result.properties_mentioned,
-    budget: result.budget || null,
-    preferred_location: result.preferred_location || null,
-    bhk_config: result.bhk_config || null,
-    purpose: result.purpose || null,
-    lead_type: result.conversation_type,
-    lead_status: result.conversation_complete ? "Site Visit Scheduled" : "Active",
     last_message: result.message,
     last_interaction_at: new Date().toISOString(),
+    // Status sticks to "scheduled" once a visit is booked (stage === "booked"),
+    // instead of flipping back to "Active" on subsequent general messages.
+    lead_status:
+      stage === "booked" || result.conversation_complete ? "Site Visit Scheduled" : "Active",
     ...extra,
   };
+  if (result.budget) row.budget = result.budget;
+  if (result.preferred_location) row.preferred_location = result.preferred_location;
+  if (result.bhk_config) row.bhk_config = result.bhk_config;
+  if (result.purpose) row.purpose = result.purpose;
+  if (result.properties_mentioned.length) row.properties_mentioned = result.properties_mentioned;
+  // Don't downgrade a known intent (e.g. site_visit_booking) back to general_query.
+  if (result.conversation_type && result.conversation_type !== "general_query") {
+    row.lead_type = result.conversation_type;
+  }
   const { error } = await supabaseAdmin().from("leads").upsert(row, { onConflict: "phone" });
   if (error) {
     await logEvent(ctx.phone, "error", "Lead upsert failed", { error: error.message });
